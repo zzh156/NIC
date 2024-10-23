@@ -15,7 +15,7 @@ address = account.address
 print("address:", address)
 
 # 合约地址（替换为你的合约地址）
-old_contract_address = "0xed27dae583ad40006c7ecfcc56282d0167d35067"
+old_contract_address = "0x15a1ba2d957e3a957626ccdddd99b6d2954ea405"
 contract_address = Web3.to_checksum_address(old_contract_address)
 # 合约 ABI（替换为你的合约 ABI）
 contract_abi = json.loads('''[
@@ -387,12 +387,12 @@ contract_abi = json.loads('''[
 				"type": "address"
 			}
 		],
-		"name": "miners",
+		"name": "minerChallenges",
 		"outputs": [
 			{
-				"internalType": "bool",
+				"internalType": "bytes32",
 				"name": "",
-				"type": "bool"
+				"type": "bytes32"
 			}
 		],
 		"stateMutability": "view",
@@ -495,9 +495,11 @@ contract_abi = json.loads('''[
 # 创建合约对象
 contract = w3.eth.contract(address=contract_address, abi=contract_abi)
 
+
 # 检查矿工是否注册
 def is_miner_registered(miner_address):
-    return contract.functions.miners(miner_address).call()
+    return contract.functions.minerChallenges(miner_address).call() != b'\x00' * 32
+
 
 # 添加矿工
 def add_miner(miner_address):
@@ -523,6 +525,9 @@ def add_miner(miner_address):
     signed_txn = w3.eth.account.sign_transaction(txn, private_key)
     tx_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
     print(f"Transaction sent: {tx_hash.hex()}")
+    
+    # 等待交易被挖矿
+    w3.eth.wait_for_transaction_receipt(tx_hash)
     print("注册成功")  # 注册成功
 
 # 挖矿函数
@@ -565,6 +570,8 @@ def mine():
             signed_txn = w3.eth.account.sign_transaction(txn, private_key)
             tx_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
             print(f"\nMining transaction sent: {tx_hash.hex()}")
+            # 等待交易被挖矿
+            w3.eth.wait_for_transaction_receipt(tx_hash)
             time.sleep(0.5)  # 挖矿成功后休息0.5秒
             break  # 发送交易后停止挖矿
 
